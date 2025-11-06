@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  backend:
+    build: ../backend
+    ports: ["8000:8000"]
+    environment:
+      - S3_BUCKET=mvp-cmmc-dev
+      - JWT_SECRET=devjwtsecret
+  frontend:
+    build: ../frontend
+    ports: ["3000:3000"]
