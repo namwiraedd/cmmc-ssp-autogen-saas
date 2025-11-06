@@ -1,0 +1,5 @@
+[
+  {"id":"3.1.1","family":"AC","title":"Limit system access to authorized users","text":"Limit system access to authorized users, processes acting on behalf of users, or devices."},
+  {"id":"3.1.2","family":"AC","title":"Ensure unique IDs","text":"Ensure each user has a unique identifier for actions."}
+  // ... include full 110 control objects here (see NIST SP800-171 Rev2)
+]
