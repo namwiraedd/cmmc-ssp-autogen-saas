@@ -65,57 +65,57 @@ docker run -t owasp/zap2docker-stable zap-baseline.py -t http://host.docker.inte
 
 Implementation notes & production hardening (you must do these)
 
-Tenant isolation: current JWT contains tenant_id. Enforce DB row-level tenant scoping for every query. Consider separate S3 prefixes + encryption keys per tenant, and use IAM policies limiting access to those prefixes.
+1. Tenant isolation: current JWT contains tenant_id. Enforce DB row-level tenant scoping for every query. Consider separate S3 prefixes + encryption keys per tenant, and use IAM policies limiting access to those prefixes.
 
-KMS / HSM: Replace JWT_SECRET with KMS-signed tokens and use AWS KMS for all encryption keys. Audit key usage.
+2. KMS / HSM: Replace JWT_SECRET with KMS-signed tokens and use AWS KMS for all encryption keys. Audit key usage.
 
-LLM & embeddings: Current mapping uses local sentence-transformers. For higher accuracy and scale, swap embedding calls to an enterprise LLM or hosted vector DB (Pinecone / Milvus) and optionally fine-tune the model on SSP/POA&M examples. Keep the raw documents encrypted at rest; do LLM requests via VPC endpoints if using cloud LLM.
+3. LLM & embeddings: Current mapping uses local sentence-transformers. For higher accuracy and scale, swap embedding calls to an enterprise LLM or hosted vector DB (Pinecone / Milvus) and optionally fine-tune the model on SSP/POA&M examples. Keep the raw documents encrypted at rest; do LLM requests via VPC endpoints if using cloud LLM.
 
-Evidence chain & explainability: Save chunk offsets and original text excerpts as evidence. Store hashes of original docs in manifest (for non-repudiation).
+4. Evidence chain & explainability: Save chunk offsets and original text excerpts as evidence. Store hashes of original docs in manifest (for non-repudiation).
 
-SSP formatting: The generator creates a clean DOCX; for auditor-ready PDF, convert via WeasyPrint or a signed PDF pipeline and apply watermarking and audit page.
+5. SSP formatting: The generator creates a clean DOCX; for auditor-ready PDF, convert via WeasyPrint or a signed PDF pipeline and apply watermarking and audit page.
 
-Audit logging & monitoring: All processing steps must write immutable audit events to an append-only store (CloudWatch Logs with KMS, or Splunk). Ensure retention & rotation policies meet DFARS contract requirements.
+6. Audit logging & monitoring: All processing steps must write immutable audit events to an append-only store (CloudWatch Logs with KMS, or Splunk). Ensure retention & rotation policies meet DFARS contract requirements.
 
-Pen test & SAST/DAST: Run OWASP ZAP and fix criticals; performer full code review for sensitive endpoints. Acceptance criteria includes zero critical ZAP findings.
+7. Pen test & SAST/DAST: Run OWASP ZAP and fix criticals; performer full code review for sensitive endpoints. Acceptance criteria includes zero critical ZAP findings.
 
-CI/CD: Terraform plan/apply in GovCloud using locked-down service principals, remote state in secure S3 with DynamoDB locking. Consider ephemeral build agents inside GovCloud for end-to-end compliance. 
+8. CI/CD: Terraform plan/apply in GovCloud using locked-down service principals, remote state in secure S3 with DynamoDB locking. Consider ephemeral build agents inside GovCloud for end-to-end compliance. 
 Amazon Web Services, Inc.
 +1
 
 Where the repo intentionally leaves choices for you (and why)
 
-LLM provider: For DoD workflow you might prefer an on-prem or FedRAMP-authorized LLM endpoint. I kept model calls local (sentence-transformers) for reproducible demo without exposing secrets. Swap to OpenAI/Anthropic with private endpoints or an on-prem model for FedRAMP compliance.
+-LLM provider: For DoD workflow you might prefer an on-prem or FedRAMP-authorized LLM endpoint. I kept model calls local (sentence-transformers) for reproducible demo without exposing secrets. Swap to OpenAI/Anthropic with private endpoints or an on-prem model for FedRAMP compliance.
 
-Vector DB: FAISS works for MVP. For multi-tenant scale use Pinecone, Milvus, or an RDS-backed vector store inside GovCloud.
+-Vector DB: FAISS works for MVP. For multi-tenant scale use Pinecone, Milvus, or an RDS-backed vector store inside GovCloud.
 
-Fine-tuning: If you want high accuracy (>95% control coverage as acceptance), you’ll almost certainly need supervised fine-tuning using labeled SSPs and evidence. The code contains CMMCMapper hook points for plugging in a fine-tuned model.
+-Fine-tuning: If you want high accuracy (>95% control coverage as acceptance), you’ll almost certainly need supervised fine-tuning using labeled SSPs and evidence. The code contains CMMCMapper hook points for plugging in a fine-tuned model.
 
 Final checklist to finish before you label this “production-ready” (do not skip)
 
-Populate docs/cmmc_controls.json with all 110 controls (use the NIST doc). 
+-Populate docs/cmmc_controls.json with all 110 controls (use the NIST doc). 
 NIST Publications
 
-Implement persistent manifest DB (Postgres with RLS for tenant isolation).
+-Implement persistent manifest DB (Postgres with RLS for tenant isolation).
 
-Integrate KMS + rotate keys.
+-Integrate KMS + rotate keys.
 
-Replace dev JWT flow with short-lived tokens + refresh + device binding.
+-Replace dev JWT flow with short-lived tokens + refresh + device binding.
 
-Configure VPC-only access for LLM provider and S3 with VPC endpoints.
+-Configure VPC-only access for LLM provider and S3 with VPC endpoints.
 
-Audit CI/CD and Terraform flow for GovCloud: require manual approvals for production apply. 
+-Audit CI/CD and Terraform flow for GovCloud: require manual approvals for production apply. 
 Amazon Web Services, Inc.
 +1
 
 Delivery & provenance
 
-This message contains a complete, copy-paste scaffold and core working modules. To get you started immediately:
+To get started immediately:
 
-Create repo and paste the files above (or I can produce each file in full if you want one giant paste).
+1. Create repo and paste the files above (or I can produce each file in full if you want one giant paste).
 
-Populate .env with S3 creds and JWT secret for local dev.
+2. Populate .env with S3 creds and JWT secret for local dev.
 
-Run ./scripts/local_start.sh (script spins up uvicorn and vite).
+3. Run ./scripts/local_start.sh (script spins up uvicorn and vite).
 
-Test upload → watch WebSocket progress → download SSP.docx.
+4. Test upload → watch WebSocket progress → download SSP.docx.
